@@ -16,7 +16,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final messageTextController = TextEditingController();
   final _auth = FirebaseAuth.instance;
-  
+
   String messageText;
 
   @override
@@ -37,7 +37,7 @@ class _ChatScreenState extends State<ChatScreen> {
       print(e);
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,8 +77,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   FlatButton(
                     onPressed: () {
                       messageTextController.clear();
-                      _firestore.collection('messages').add(
-                          {'text': messageText, 'sender': loggedInUser.email});
+                      _firestore.collection('messages').add({
+                        'text': messageText,
+                        'sender': loggedInUser.email,
+                        'messageTime': DateTime.now()
+                      });
                     },
                     child: Text(
                       'Send',
@@ -99,7 +102,10 @@ class MessagesStream extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _firestore.collection('messages').snapshots(),
+      stream: _firestore
+          .collection('messages')
+          .orderBy('messageTime', descending: false)
+          .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(
@@ -116,8 +122,10 @@ class MessagesStream extends StatelessWidget {
 
           final currentUser = loggedInUser.email;
 
-          final messageBubble =
-              MessageBubble(sender: messageSender, text: messageText, isMe: currentUser==messageSender);
+          final messageBubble = MessageBubble(
+              sender: messageSender,
+              text: messageText,
+              isMe: currentUser == messageSender);
           messageBubbles.add(messageBubble);
         }
         return Expanded(
@@ -132,7 +140,7 @@ class MessagesStream extends StatelessWidget {
   }
 }
 
-class MessageBubble extends StatelessWidget { 
+class MessageBubble extends StatelessWidget {
   MessageBubble({this.sender, this.text, this.isMe});
 
   final String sender;
@@ -143,7 +151,8 @@ class MessageBubble extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.all(10.0),
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: <Widget>[
           Text(
             sender,
@@ -155,17 +164,17 @@ class MessageBubble extends StatelessWidget {
           Material(
             elevation: 5.0,
             borderRadius: BorderRadius.only(
-              topRight: Radius.circular(isMe ? 0.0 : 30.0),
-              topLeft: Radius.circular(!isMe ? 0.0 : 30.0),
-              bottomLeft: Radius.circular(30.0),
-              bottomRight: Radius.circular(30.0)
-            ),
-            color: isMe?Colors.lightBlueAccent:Colors.white,
+                topRight: Radius.circular(isMe ? 0.0 : 30.0),
+                topLeft: Radius.circular(!isMe ? 0.0 : 30.0),
+                bottomLeft: Radius.circular(30.0),
+                bottomRight: Radius.circular(30.0)),
+            color: isMe ? Colors.lightBlueAccent : Colors.white,
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               child: Text(
                 text,
-                style: TextStyle(fontSize: 15, color: isMe ? Colors.white : Colors.black54),
+                style: TextStyle(
+                    fontSize: 15, color: isMe ? Colors.white : Colors.black54),
               ),
             ),
           ),
